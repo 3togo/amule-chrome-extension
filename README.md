@@ -104,7 +104,9 @@ compatible with the documented eD2k command line and maintained EC test peer.
 `AMULE_SOURCE_DIR` must point to its matching aMule source checkout; the fixture
 imports `unittests/tests/DaemonConfig.py` and `AllSearchIntegrationTest.py` from
 that checkout. The extension repository does not vendor these aMule helpers.
-Missing or unusable source helpers return exit code 77 during preflight.
+Missing or unusable source helpers, including the EC authentication dependencies,
+return exit code 77 during preflight. Relative source and binary paths (including
+paths with spaces and binaries found on `PATH`) are resolved before desktop launch.
 Older installed versions can fail escaped-filename checks because of their own
 decoding behavior; do not weaken those assertions to accept a changed filename. Autoconnection, Kad and UPnP are disabled in its private config.
 The fixture seeds `lastversion` for GIT, 3.0.1 and 3.2.0 to avoid the first-run
@@ -112,8 +114,20 @@ version notice. Add the tested version there when testing another release.
 Smoke tests retain their evidence in the printed temporary directory. Missing
 prerequisites return exit code 77 before fixture processes start.
 
-The repository CI runs the DOM unit tests and the Linux logging-handler smoke
-test. Windows/macOS, native context-menu selection and peer file transfer are not
+The repository CI runs the DOM unit tests, application preflight regressions
+against pinned aMule source helpers, and the Linux logging-handler smoke test.
+To run the preflight regressions locally with the dependencies listed above:
+
+```sh
+AMULE_SOURCE_DIR=/path/to/amule-source python3 tests/preflight.test.py
+```
+
+These regressions exercise the shell entry point with real aMule helper imports
+and stop at a substituted browser probe; they do not launch a browser or daemon.
+They cover missing dependencies and executable resolution across working directories.
+The optional full application smoke test is still needed to establish queue acceptance.
+
+Windows/macOS, native context-menu selection and peer file transfer are not
 covered. Test failures and evidence must not be interpreted as success merely
 because Chrome logged an external-handler launch.
 

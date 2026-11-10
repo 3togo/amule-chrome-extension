@@ -27,7 +27,18 @@ for tool in node python3 xvfb-run xauth dbus-run-session update-desktop-database
 done
 python3 -c 'import ctypes, gi; ctypes.CDLL("libX11.so.6"); ctypes.CDLL("libXtst.so.6"); gi.require_version("Atspi", "2.0"); from gi.repository import Atspi' || exit 77
 if [ -n "${AMULE_BINARY:-}" ]; then
-    AMULE_BINARY=$(command -v "$AMULE_BINARY") || exit 77
+    # Desktop handlers may run from a different working directory. Resolve
+    # both explicit relative paths and executables found through a relative PATH.
+    AMULE_BINARY=$(python3 - "$AMULE_BINARY" <<'PYTHON'
+import os
+import shutil
+import sys
+binary = shutil.which(sys.argv[1])
+if not binary:
+    sys.exit('AMULE_BINARY is not executable: ' + sys.argv[1])
+print(os.path.abspath(binary))
+PYTHON
+    ) || exit 77
     export AMULE_BINARY
     if [ -z "${AMULE_SOURCE_DIR:-}" ]; then
         echo "Set AMULE_SOURCE_DIR to the aMule source checkout matching AMULE_BINARY" >&2
@@ -43,6 +54,9 @@ import sys
 sys.path.insert(0, str(Path(os.environ['AMULE_SOURCE_DIR']) / 'unittests/tests'))
 from DaemonConfig import write_amule_conf
 from AllSearchIntegrationTest import C, EC
+# EC imports authentication only when connecting. Check it before launching
+# the browser or daemon, including its transitive SRP and crypto dependencies.
+from ECWire import authenticate
 PYTHON
 fi
 node --input-type=module -e 'import {chromium} from "playwright-core"; import fs from "node:fs"; fs.accessSync(process.env.AMULE_BROWSER_EXECUTABLE || chromium.executablePath(), fs.constants.X_OK)' || exit 77

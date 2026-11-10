@@ -20,6 +20,15 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: amule-org/amule
+          # Keep fixture imports reproducible without building aMule in this job.
+          ref: 2b7da2f83c80f87c24e605f430983f33ec0c82a8
+          path: .amule-test-source
+          sparse-checkout: |
+            unittests/tests
+            src/libs/ec/abstracts
       - uses: actions/setup-node@v7
         with:
           node-version: '24'
@@ -30,7 +39,11 @@ jobs:
           npm ci --no-audit --no-fund
           npx playwright-core install --with-deps chromium
           sudo apt-get update
-          sudo apt-get install -y xvfb xauth dbus-x11 desktop-file-utils python3-gi gir1.2-atspi-2.0 at-spi2-core libxtst6 xdg-utils libglib2.0-bin
+          sudo apt-get install -y xvfb xauth dbus-x11 desktop-file-utils python3-gi python3-cryptography gir1.2-atspi-2.0 at-spi2-core libxtst6 xdg-utils libglib2.0-bin
+      - name: Test optional application preflight and caller paths
+        env:
+          AMULE_SOURCE_DIR: ${{ github.workspace }}/.amule-test-source
+        run: python3 tests/preflight.test.py
       - name: Test content script in real browser DOMs
         run: npm test
       - name: Test packaged extension, native consent and desktop handoff
