@@ -94,12 +94,17 @@ filenames, file hashes and sizes, including the absence of cancelled transfers.
 To additionally verify actual download-queue acceptance in an isolated aMule:
 
 ```sh
+AMULE_SOURCE_DIR=/path/to/amule-source \
 AMULE_BINARY=/path/to/current/amule-or-amuled npm run test:smoke
 ```
 
 The optional application test also requires Python cryptography
 (`sudo apt-get install python3-cryptography`). Use a current source build
 compatible with the documented eD2k command line and maintained EC test peer.
+`AMULE_SOURCE_DIR` must point to its matching aMule source checkout; the fixture
+imports `unittests/tests/DaemonConfig.py` and `AllSearchIntegrationTest.py` from
+that checkout. The extension repository does not vendor these aMule helpers.
+Missing or unusable source helpers return exit code 77 during preflight.
 Older installed versions can fail escaped-filename checks because of their own
 decoding behavior; do not weaken those assertions to accept a changed filename. Autoconnection, Kad and UPnP are disabled in its private config.
 The fixture seeds `lastversion` for GIT, 3.0.1 and 3.2.0 to avoid the first-run

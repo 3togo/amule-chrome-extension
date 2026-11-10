@@ -26,8 +26,7 @@ import os
 from pathlib import Path
 import sys
 
-root = Path(__file__).resolve().parent
-sys.path.insert(0, str(root.parents[3] / 'unittests/tests'))
+sys.path.insert(0, str(Path(os.environ['AMULE_SOURCE_DIR']) / 'unittests/tests'))
 from AllSearchIntegrationTest import C, EC
 
 state = Path(os.environ['ED2K_TEST_STATE'])

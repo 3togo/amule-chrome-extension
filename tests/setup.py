@@ -85,7 +85,7 @@ if os.environ.get('AMULE_BINARY'):
     assert shutil.which(os.environ['AMULE_BINARY']), 'AMULE_BINARY is not executable'
     # Reuse the project's offline application fixture. In particular amuled
     # exits unless EC is configured, even when only CLI link delivery is used.
-    sys.path.insert(0, str(root.parents[3] / 'unittests/tests'))
+    sys.path.insert(0, str(Path(os.environ['AMULE_SOURCE_DIR']) / 'unittests/tests'))
     from DaemonConfig import write_amule_conf
     write_amule_conf(state / 'amule', port + 1, Port=port, UDPEnable=0,
                      Autoconnect=0, GeoIPAutoUpdate=0)

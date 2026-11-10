@@ -29,7 +29,21 @@ python3 -c 'import ctypes, gi; ctypes.CDLL("libX11.so.6"); ctypes.CDLL("libXtst.
 if [ -n "${AMULE_BINARY:-}" ]; then
     AMULE_BINARY=$(command -v "$AMULE_BINARY") || exit 77
     export AMULE_BINARY
-    python3 -c 'import cryptography' || exit 77
+    if [ -z "${AMULE_SOURCE_DIR:-}" ]; then
+        echo "Set AMULE_SOURCE_DIR to the aMule source checkout matching AMULE_BINARY" >&2
+        exit 77
+    fi
+    AMULE_SOURCE_DIR=$(CDPATH= cd -- "$AMULE_SOURCE_DIR" && pwd) || exit 77
+    export AMULE_SOURCE_DIR
+    python3 - <<'PYTHON' || exit 77
+import cryptography
+import os
+from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(os.environ['AMULE_SOURCE_DIR']) / 'unittests/tests'))
+from DaemonConfig import write_amule_conf
+from AllSearchIntegrationTest import C, EC
+PYTHON
 fi
 node --input-type=module -e 'import {chromium} from "playwright-core"; import fs from "node:fs"; fs.accessSync(process.env.AMULE_BROWSER_EXECUTABLE || chromium.executablePath(), fs.constants.X_OK)' || exit 77
 python3 "$TASK_TESTS/../tools/package.py"

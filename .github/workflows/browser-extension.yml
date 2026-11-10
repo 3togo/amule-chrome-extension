@@ -3,14 +3,8 @@ name: Browser extension CI
 on:
   push:
     branches: [ "**" ]
-    paths:
-      - 'src/utils/browser-extension/**'
-      - '.github/workflows/browser-extension.yml'
   pull_request:
     branches: [ "**" ]
-    paths:
-      - 'src/utils/browser-extension/**'
-      - '.github/workflows/browser-extension.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}-${{ github.ref == 'refs/heads/master' && github.sha || '' }}
@@ -24,16 +18,13 @@ jobs:
     name: eD2k extension tests
     runs-on: ubuntu-24.04
     timeout-minutes: 15
-    defaults:
-      run:
-        working-directory: src/utils/browser-extension
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: npm
-          cache-dependency-path: src/utils/browser-extension/package-lock.json
+          cache-dependency-path: package-lock.json
       - name: Install pinned browser and desktop test dependencies
         run: |
           npm ci --no-audit --no-fund
@@ -64,4 +55,4 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: ed2k-link-fixer
-          path: src/utils/browser-extension/dist/ed2k-link-fixer.zip
+          path: dist/ed2k-link-fixer.zip
