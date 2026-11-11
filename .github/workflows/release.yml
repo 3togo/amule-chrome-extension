@@ -1,0 +1,58 @@
+name: Release extension
+
+on:
+  push:
+    tags: [ 'v*' ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    # Fork tags must not publish official-looking releases automatically.
+    if: github.repository == 'amule-org/amule-chrome-extension'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Check tag and package versions
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const read = name => JSON.parse(fs.readFileSync(name, 'utf8'));
+          const version = read('manifest.json').version;
+          const lock = read('package-lock.json');
+          if (process.env.RELEASE_TAG !== `v${version}` ||
+              read('package.json').version !== version ||
+              lock.packages[''].version !== version) {
+            throw new Error('Tag, manifest, package and lockfile versions must match');
+          }
+          JS
+      - name: Install and test
+        run: |
+          npm ci --no-audit --no-fund
+          npx playwright-core install --with-deps chromium
+          npm test
+      - name: Build release ZIP
+        run: npm run package
+      - name: Attach ZIP to GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$RELEASE_TAG" dist/ed2k-link-fixer.zip \
+            --repo "$GITHUB_REPOSITORY" --verify-tag \
+            --title "eD2k Link Fixer $RELEASE_TAG" --generate-notes \
+            --notes 'Extract ed2k-link-fixer.zip and load its ed2k-link-fixer folder using Load unpacked in chrome://extensions. Requires aMule 3.1.0 or later with its eD2k handler registered. Linux is validated; Windows and macOS handoff remain unverified. This is not a Chrome Web Store installation.'

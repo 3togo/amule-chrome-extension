@@ -5,13 +5,18 @@ computer's registered eD2k application. Chromium rejects links containing litera
 `|` characters; the extension replaces those characters with `%7C` before normal
 link activation. Existing filename escapes and other URL schemes are preserved.
 
-Your computer must already have a compatible application registered for `ed2k:`.
+Install **aMule 3.1.0 or later** and enable its eD2k link-handler registration
+in **Preferences → General**. Version 3.1.0 is the first aMule release that
+accepts `%7C` delimiters and provides handler registration. Another application
+must support encoded delimiters and be registered for `ed2k:` to work.
 This extension does not install or register aMule. It needs no native messaging
 host, background service or download-directory watcher.
 
 ## Install
 
-1. Download and extract the extension ZIP, or use this directory from a checkout.
+1. Download `ed2k-link-fixer.zip` from the assets of a
+   [GitHub release](https://github.com/amule-org/amule-chrome-extension/releases)
+   and extract it. If no release is available yet, use a source checkout.
 2. Open `chrome://extensions`, enable **Developer mode**, select **Load unpacked**
    and choose the directory containing `manifest.json`.
 3. Refresh web pages that were open before installation.
@@ -52,84 +57,11 @@ Linux is the validated OS. Windows and macOS require their own working OS handle
 and have not been tested. Other Chromium-based browsers have not been validated
 with this packaged version.
 
-## Build and test
+## Development
 
-Requires Node.js 22 or newer and Python 3. Run from this directory:
-
-```sh
-npm ci
-npx playwright-core install chromium
-npm test
-npm run package
-```
-
-The ZIP is written to `dist/ed2k-link-fixer.zip`. The package script includes only
-runtime assets, help, README and GPL license; no browser profiles or test output.
-No build step is needed to load the source directory as an unpacked extension.
-
-Set `AMULE_BROWSER_EXECUTABLE` to test an existing compatible Chromium executable
-instead of Playwright's browser, for example `/usr/bin/google-chrome` on Linux.
-The browser must support CDP's unpacked-extension loading for the smoke test.
-
-On Debian/Ubuntu, install the Linux smoke-test prerequisites:
-
-```sh
-sudo apt-get install xvfb xauth dbus-x11 desktop-file-utils python3-gi gir1.2-atspi-2.0 at-spi2-core libxtst6 xdg-utils libglib2.0-bin
-npm run test:smoke
-```
-
-The smoke test builds and extracts the ZIP, runs a headed browser under a private
-X server and D-Bus session, and registers a logging handler in private XDG
-folders. It checks the blocked control, native first-use permission prompt,
-handler delivery, dynamic links, frames, site cancellation and recovery, page
-click handlers, filename escapes, activation methods and bundled help.
-The default smoke test establishes OS handoff; it does not require aMule.
-CI declares a GNOME/GIO desktop route. Older generic `xdg-open` releases
-misclassify digit-containing schemes such as `ed2k:` as file paths; the
-[legacy scheme check](https://sources.debian.org/src/xdg-utils/1.1.3-4.1/scripts/xdg-open.in/)
-shows that limitation. A modern generic launcher can also run the smoke test.
-The optional application test also queries the actual EC queue and compares exact
-filenames, file hashes and sizes, including the absence of cancelled transfers.
-
-To additionally verify actual download-queue acceptance in an isolated aMule:
-
-```sh
-AMULE_SOURCE_DIR=/path/to/amule-source \
-AMULE_BINARY=/path/to/current/amule-or-amuled npm run test:smoke
-```
-
-The optional application test also requires Python cryptography
-(`sudo apt-get install python3-cryptography`). Use a current source build
-compatible with the documented eD2k command line and maintained EC test peer.
-`AMULE_SOURCE_DIR` must point to its matching aMule source checkout; the fixture
-imports `unittests/tests/DaemonConfig.py` and `AllSearchIntegrationTest.py` from
-that checkout. The extension repository does not vendor these aMule helpers.
-Missing or unusable source helpers, including the EC authentication dependencies,
-return exit code 77 during preflight. Relative source and binary paths (including
-paths with spaces and binaries found on `PATH`) are resolved before desktop launch.
-Older installed versions can fail escaped-filename checks because of their own
-decoding behavior; do not weaken those assertions to accept a changed filename. Autoconnection, Kad and UPnP are disabled in its private config.
-The fixture seeds `lastversion` for GIT, 3.0.1 and 3.2.0 to avoid the first-run
-version notice. Add the tested version there when testing another release.
-Smoke tests retain their evidence in the printed temporary directory. Missing
-prerequisites return exit code 77 before fixture processes start.
-
-The repository CI runs the DOM unit tests, application preflight regressions
-against pinned aMule source helpers, and the Linux logging-handler smoke test.
-To run the preflight regressions locally with the dependencies listed above:
-
-```sh
-AMULE_SOURCE_DIR=/path/to/amule-source python3 tests/preflight.test.py
-```
-
-These regressions exercise the shell entry point with real aMule helper imports
-and stop at a substituted browser probe; they do not launch a browser or daemon.
-They cover missing dependencies and executable resolution across working directories.
-The optional full application smoke test is still needed to establish queue acceptance.
-
-Windows/macOS, native context-menu selection and peer file transfer are not
-covered. Test failures and evidence must not be interpreted as success merely
-because Chrome logged an external-handler launch.
+Build instructions, test prerequisites and harness coverage are in
+[DEVELOPING.md](https://github.com/amule-org/amule-chrome-extension/blob/master/DEVELOPING.md). Release and platform checks are in
+[RELEASING.md](https://github.com/amule-org/amule-chrome-extension/blob/master/RELEASING.md).
 
 ## License
 
